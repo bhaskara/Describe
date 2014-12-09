@@ -9,10 +9,11 @@ Int = namedtuple('Int', ['min', 'max'])
 Float = namedtuple('Float', ['min', 'max'])
 Str = namedtuple('String', [])
 Atom = namedtuple('Atom', ['type'])
+Maybe = namedtuple('Maybe', ['type'])
 Any = namedtuple('Any', [])
 Empty = namedtuple('Empty', [])
 
-idxs = [List, Tuple, Dict, Array, Int, Float, Str, Atom, Any, Empty]
+idxs = [Maybe, List, Tuple, Dict, Array, Int, Float, Str, Atom, Any, Empty]
 
 def idx(d):
   return idxs.index(type(d))
@@ -42,6 +43,8 @@ def pprint(desc, lvl=0):
       return "Int({}, {})".format(*desc)
     else:
       return "Int"
+  elif isinstance(desc, Maybe):
+    return "Maybe({})".format(pprint(desc.type))
   elif isinstance(desc, Array):
     return "{}d array".format(desc.dim)
   elif isinstance(desc, List):
@@ -59,6 +62,8 @@ def describe(obj):
     return List(generalize(*map(describe, obj)), len(obj))
   elif isinstance(obj, np.ndarray):
     return Array(len(obj.shape))
+  elif obj is None:
+    return Maybe(Empty())
   elif isinstance(obj, dict):
     return Dict(generalize(*map(describe, obj.iterkeys())),
                 generalize(*map(describe, obj.itervalues())))
@@ -77,9 +82,13 @@ def generalize(*descs):
       d2, d1 = d1, d2
     if d1 == d2:
       return d1
-    elif type(d2) == Empty:
+    elif isinstance(d1, Maybe):
+      t1 = d1.type
+      t2 = d2.type if isinstance(d2, Maybe) else d2
+      return Maybe(generalize(t1, t2))
+    elif isinstance(d2, Empty):
       return d1
-    elif type(d2) == Any():
+    elif isinstance(d2, Any):
       return d2
     elif isinstance(d1, List):
       if isinstance(d2, List):
