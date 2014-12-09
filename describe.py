@@ -113,8 +113,7 @@ def generalize(*descs):
         a, b = d1
         c, d = d2
         return Float(min(a, c), max(b, d))
-    else:
-      return Any()
+    return Any()
 
   return reduce(pairwise, descs, Empty())
       
