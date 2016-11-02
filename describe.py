@@ -21,13 +21,13 @@ def idx(d):
 def wh(obj):
   return pprint(describe(obj))
 
-def pprint(desc, lvl=0):
+def pprint(desc, obj=None, lvl=0):
   if isinstance(desc, Empty):
     return "?"
   elif isinstance(desc, Any):
     return "*"
   elif isinstance(desc, Atom):
-    return desc.type
+    return str(desc.type)
   elif isinstance(desc, Str):
     return "String"
   elif isinstance(desc, Dict):
@@ -46,9 +46,15 @@ def pprint(desc, lvl=0):
   elif isinstance(desc, Maybe):
     return "Maybe({})".format(pprint(desc.type))
   elif isinstance(desc, Array):
-    return "{}d array".format(desc.dim)
+    if lvl == 0 and obj is not None:
+      return "{}d array of shape {}".format(desc.dim, obj.shape)
+    else:
+      return "{}d array".format(desc.dim)
   elif isinstance(desc, List):
-    return "[{}]".format(pprint(desc.type, lvl=lvl + 1))
+    if lvl == 0 and obj is not None:
+      return "[{}: {}]".format(pprint(desc.type, lvl=lvl + 1), len(obj))
+    else:
+      return "[{}]".format(pprint(desc.type, lvl=lvl + 1))
   elif isinstance(desc, Tuple):
     types = ", ".join([pprint(t, lvl=lvl + 1) for t in desc.types])
     return "({})".format(types)
@@ -59,14 +65,14 @@ def describe(obj):
   if isinstance(obj, tuple):
     return Tuple(map(describe, obj))
   elif isinstance(obj, list):
-    return List(generalize(*map(describe, obj)), len(obj))
+    return List(generalize(*map(describe, obj[:5])), len(obj))
   elif isinstance(obj, np.ndarray):
     return Array(len(obj.shape))
   elif obj is None:
     return Maybe(Empty())
   elif isinstance(obj, dict):
-    return Dict(generalize(*map(describe, obj.iterkeys())),
-                generalize(*map(describe, obj.itervalues())))
+    return Dict(generalize(*map(describe, obj.keys()[:5])),
+                generalize(*map(describe, obj.values()[:5])))
   elif isinstance(obj, str):
     return Str()
   elif isinstance(obj, int):
